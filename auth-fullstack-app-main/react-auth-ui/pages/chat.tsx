@@ -22,7 +22,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const fetchLatestChat = async () => {
