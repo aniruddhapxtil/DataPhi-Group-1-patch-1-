@@ -1,6 +1,5 @@
+// tailwind.config.ts
 import type { Config } from 'tailwindcss';
-
-// Remove unnecessary module augmentation and import
 
 const config: Config = {
   content: [

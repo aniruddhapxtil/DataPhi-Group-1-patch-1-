@@ -59,7 +59,6 @@ export default function ChatPage() {
     }
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
     setLoading(true);
 
     try {
@@ -74,6 +73,7 @@ export default function ChatPage() {
       console.error('Failed to send message:', err);
     } finally {
       setLoading(false);
+      setInput('');
     }
   };
 
@@ -92,7 +92,7 @@ export default function ChatPage() {
           setMessages(chat.messages);
       }} />
       <div className="chat-main">
-        <div className="chat-history">
+        <div className="chat-history-container">
           {messages.map((msg, index) => (
             <div key={index} className={`chat-message ${msg.role}`}>
               {msg.content}
@@ -105,18 +105,22 @@ export default function ChatPage() {
           )}
           <div ref={messagesEndRef} />
         </div>
-        <form onSubmit={sendMessage} className="chat-input-area">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="chat-input"
-            placeholder="Send a message..."
-            disabled={loading}
-          />
-          <button type="submit" className="send-button" disabled={loading}>
-            Send
-          </button>
+        <form onSubmit={sendMessage} className="chat-prompt-area">
+          <div className="prompt-box">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="chat-input"
+              placeholder="Send a message..."
+              disabled={loading}
+            />
+            <button type="submit" className="send-button" disabled={loading}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-white">
+                <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -4,7 +4,7 @@ export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="fixed top-8 left-8 z-50">
+    <div className="left-8 z-50">
       <label className="switch">
         <input 
           type="checkbox" 
@@ -13,6 +13,7 @@ export default function ThemeToggle() {
         />
         <span className="slider"></span>
       </label>
+      
     </div>
   );
 }

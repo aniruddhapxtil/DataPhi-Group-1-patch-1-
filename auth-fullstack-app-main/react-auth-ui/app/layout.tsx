@@ -4,7 +4,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Vercel AI Chatbot Clone',
+  title: 'DataPhi AI Chatbot',
   description: 'A Next.js chat application inspired by the Vercel AI Chatbot.',
 };
 
