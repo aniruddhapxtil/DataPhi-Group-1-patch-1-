@@ -8,10 +8,8 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <div className="relative h-screen w-screen">
-          <ThemeToggle />
-          <Component {...pageProps} />
-        </div>
+        <ThemeToggle />
+        <Component {...pageProps} />
       </AuthProvider>
     </ThemeProvider>
   );

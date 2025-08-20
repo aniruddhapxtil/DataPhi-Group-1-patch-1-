@@ -116,8 +116,8 @@ export default function ChatPage() {
               disabled={loading}
             />
             <button type="submit" className="send-button" disabled={loading}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-white">
-                <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
+                <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" strokeWidth="2"  stroke-linecap="round" stroke-linejoin="round"></path>
               </svg>
             </button>
           </div>

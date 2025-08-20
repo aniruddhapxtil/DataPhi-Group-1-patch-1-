@@ -13,7 +13,7 @@
   --input-background: #27272a;
   --input-border: #44444a;
   --primary: #6c63ff;
-  --red: #ef4444; /* Added a new red color variable */
+  --red: #ef4444;
 }
 
 /*
@@ -26,8 +26,8 @@ body.light-theme {
   --border-color: #e4e4e7;
   --input-background: #e4e4e7;
   --input-border: #d4d4d8;
-  --primary: #4e4ee8;
-  --red: #ef4444; /* Added a new red color variable */
+  --primary: #5a52d3;
+  --red: #ef4444;
 }
 
 body {
@@ -287,7 +287,7 @@ body {
 
 /* --- Theme Toggle Slider Styling --- */
 .switch {
-  font-size: 15px;
+  font-size: 17px;
   position: relative;
   display: inline-block;
   width: 3.5em;
@@ -335,11 +335,10 @@ input:checked + .slider:before {
   box-shadow: inset 15px -4px 0px 15px #fff000;
 }
 
-/* --- Positioning class for the Theme Toggle --- */
-/* --- Positioning class for the Theme Toggle --- */
-.theme-toggle-position {
+/* --- Force Theme Toggle Position --- */
+#theme-toggle-container {
   position: fixed;
-  top: 8px;
-  right: 8px; /* Changed from left: 8px */
+  top: 2rem; /* 32px */
+  right: 2rem; /* 32px */
   z-index: 50;
 }

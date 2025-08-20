@@ -1,10 +1,14 @@
+"use client"; 
+
 import { useTheme } from '../context/ThemeContext';
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="left-8 z-50">
+    // We've removed all Tailwind positioning classes and added a unique ID.
+    // The positioning will now be handled by the global.css file.
+    <div id="theme-toggle-container">
       <label className="switch">
         <input 
           type="checkbox" 
@@ -13,7 +17,6 @@ export default function ThemeToggle() {
         />
         <span className="slider"></span>
       </label>
-      
     </div>
   );
 }

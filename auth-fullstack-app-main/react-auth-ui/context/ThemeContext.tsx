@@ -1,3 +1,5 @@
+"use client"; // Add this directive to the top
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Define the shape of our context
