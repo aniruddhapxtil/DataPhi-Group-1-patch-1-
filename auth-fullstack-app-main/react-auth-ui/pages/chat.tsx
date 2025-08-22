@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import api from '../services/api';
@@ -28,52 +30,66 @@ export default function ChatPage() {
   const fetchLatestChat = async () => {
     try {
       const res = await api.get('/chats/latest');
-      setCurrentChat(res.data);
-      setMessages(res.data.messages);
+      if (res.data) {
+        handleSelectChat(res.data);
+      } else {
+        const newChatRes = await api.post('/chats/');
+        setCurrentChat(newChatRes.data);
+        setMessages([]);
+      }
     } catch (err) {
-      const newChatRes = await api.post('/chats/');
-      setCurrentChat(newChatRes.data);
-      setMessages([]);
+      console.error('No chats found, creating a new one.', err);
+      try {
+        const newChatRes = await api.post('/chats/');
+        setCurrentChat(newChatRes.data);
+        setMessages([]);
+      } catch (postErr) {
+        console.error('Failed to create a new chat:', postErr);
+      }
     }
   };
 
   useEffect(() => {
-    if (user) {
-      fetchLatestChat();
-    }
+    if (user) fetchLatestChat();
   }, [user]);
+
+  const handleSelectChat = async (chat: { id: number; title: string }) => {
+    try {
+      const res = await api.get(`/chats/${chat.id}/messages`);
+      const fullChatSession = { ...chat, messages: res.data };
+      setCurrentChat(fullChatSession);
+      setMessages(res.data);
+    } catch (err) {
+      console.error('Error fetching chat messages:', err);
+    }
+  };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !currentChat) return;
 
     const userMessage: Message = { id: Date.now(), content: input, role: 'user' };
-    
-    if (currentChat.title === 'New Chat') {
-        try {
-            await api.patch(`/chats/${currentChat.id}`, { title: input });
-            currentChat.title = input;
-        } catch (err) {
-            console.error('Failed to update chat title:', err);
-        }
-    }
-
     setMessages((prev) => [...prev, userMessage]);
+    setInput('');
     setLoading(true);
 
     try {
-      const res = await api.post(`/chats/${currentChat.id}/messages`, {
-        content: userMessage.content,
-        role: userMessage.role,
-      });
-
+      if (currentChat.title === 'New Chat') {
+        await api.patch(`/chats/${currentChat.id}`, { title: input });
+        setCurrentChat(prev => prev ? { ...prev, title: input } : null);
+      }
+      
+      await api.post(`/chats/${currentChat.id}/messages`, { content: userMessage.content, role: 'user' });
+      
       const updatedMessagesRes = await api.get(`/chats/${currentChat.id}/messages`);
       setMessages(updatedMessagesRes.data);
+
     } catch (err) {
       console.error('Failed to send message:', err);
+      setInput(userMessage.content);
+      setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
     } finally {
       setLoading(false);
-      setInput('');
     }
   };
 
@@ -85,39 +101,44 @@ export default function ChatPage() {
 
   return (
     <div className="chat-page-container">
-      <ChatSidebar 
-        currentChatId={currentChat?.id || null} 
-        onSelectChat={(chat: ChatSession) => {
-          setCurrentChat(chat);
-          setMessages(chat.messages);
-      }} />
-      <div className="chat-main">
-        <div className="chat-history-container">
-          {messages.map((msg, index) => (
-            <div key={index} className={`chat-message ${msg.role}`}>
-              {msg.content}
-            </div>
-          ))}
-          {loading && (
-            <div className="chat-message assistant">
-              Thinking...
-            </div>
-          )}
-          <div ref={messagesEndRef} />
+      <ChatSidebar
+        currentChatId={currentChat?.id || null}
+        onSelectChat={handleSelectChat}
+      />
+
+      <div className="flex-1 h-full flex flex-col">
+        <div className="chat-history flex-grow overflow-y-auto min-h-0 p-4">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`chat-message-wrapper max-w-2xl mx-auto ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`chat-message ${msg.role}`}>
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="chat-message-wrapper max-w-2xl mx-auto justify-start">
+                <div className="chat-message assistant">Thinking...</div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
         </div>
-        <form onSubmit={sendMessage} className="chat-prompt-area">
-          <div className="prompt-box">
+
+        <form onSubmit={sendMessage} className="chat-input-area pt-4 pb-8">
+          <div className="prompt-box max-w-2xl mx-auto">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="chat-input"
-              placeholder="Send a message..."
+              placeholder="Ask anything"
               disabled={loading}
             />
             <button type="submit" className="send-button" disabled={loading}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
-                <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" strokeWidth="2"  stroke-linecap="round" stroke-linejoin="round"></path>
+              <svg width="24" height="24" viewBox="0 0 24" fill="currentColor">
+                <path d="M8 5.14v13.72L18.72 12 8 5.14z"></path>
               </svg>
             </button>
           </div>

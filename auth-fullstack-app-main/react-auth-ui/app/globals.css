@@ -114,7 +114,8 @@ body {
 /* --- Global Styles for Containers --- */
 .chat-page-container {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     background-color: var(--background);
 }
 
@@ -123,9 +124,9 @@ body {
     background-color: var(--card-background);
     color: var(--foreground);
     padding: 1rem;
+    border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border-color);
 }
 
 .chat-sessions-header {
@@ -185,8 +186,6 @@ body {
     display: flex;
     flex-direction: column;
     padding: 1rem;
-    max-width: 1000px;
-    margin: auto;
 }
 
 .chat-history {
@@ -197,24 +196,33 @@ body {
     gap: 1rem;
     padding-bottom: 1rem;
 }
-
+.chat-message-wrapper {
+  display: flex;
+  width: 100%;
+  margin: 0.5rem 0;
+  max-width: 768px; /* Corresponds to max-w-3xl */
+  margin-left: auto;
+  margin-right: auto;
+}
 .chat-message {
-    padding: 1rem;
-    border-radius: 0.5rem;
-    max-width: 80%;
-    word-wrap: break-word;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  word-wrap: break-word;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  /* ✅ REMOVED max-width from here to allow natural sizing */
 }
 
 .chat-message.user {
-    background-color: var(--primary);
-    color: white;
-    align-self: flex-end;
+  background-color: var(--card-background);
+  color: var(--foreground);
+  text-align: left;
 }
 
 .chat-message.assistant {
-    background-color: var(--card-background);
-    color: var(--foreground);
-    align-self: flex-start;
+  background-color: var(--card-background);
+  color: var(--foreground);
+  text-align: left;
 }
 
 .chat-input-area {
@@ -225,54 +233,103 @@ body {
 }
 
 .prompt-box {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    max-width: 700px;
-    background-color: var(--input-background);
-    border-radius: 1.5rem; /* More rounded corners */
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 768px; /* Corresponds to max-w-3xl */
+  margin-left: auto;
+  margin-right: auto;
+  background-color: var(--input-background);
+  border-radius: 1.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 .prompt-box .chat-input {
-    flex-grow: 1;
-    background-color: transparent;
-    border: none;
-    outline: none;
-    padding: 0;
-    font-size: 1rem;
+  flex-grow: 1;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  padding: 0.5rem;
+  font-size: 1rem;
+  color: var(--foreground);
 }
 
 .prompt-box .send-button {
-    width: auto;
-    padding: 0.5rem;
-    border-radius: 50%;
-    background-color: var(--primary);
-    color: white;
+  width: auto;
+  padding: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--send-button-background);
+  color: var(--foreground);
+  border: none;
+  outline: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-
-/* --- New Logout Button Styling --- */
+.prompt-box .send-button:hover {
+  background-color: var(--primary);
+  color: white;
+}
+/* --- Logout Button --- */
 .logout-button {
-  background-color: var(--red); /* Using the new red color variable */
+  background-color: var(--red);
   color: white;
   font-weight: bold;
   border: none;
-  border-radius: 9999px; /* This makes it a capsule shape */
+  border-radius: 9999px;
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
   width: 100%;
-  margin-top: auto; /* Pushes the button to the bottom of the flex container */
+  margin-top: auto;
 }
 
 .logout-button:hover {
   background-color: #dc2626;
 }
 
-/* --- New Delete Button Styling --- */
+/* --- 3-dot menu button --- */
+.menu-button {
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+/* --- Dropdown menu for Rename/Delete/Archive --- */
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  width: 10rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.dropdown-menu button {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dropdown-menu button:hover {
+  background-color: var(--border-color);
+}
+
+/* --- Delete Button Styling --- */
 .delete-button {
   background: none;
   border: none;
@@ -338,7 +395,85 @@ input:checked + .slider:before {
 /* --- Force Theme Toggle Position --- */
 #theme-toggle-container {
   position: fixed;
-  top: 2rem; /* 32px */
-  right: 2rem; /* 32px */
+  top: 2rem;
+  right: 2rem;
   z-index: 50;
+}
+
+/* --- Modal Styles --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background-color: var(--card-background);
+  color: var(--foreground);
+  padding: 2rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.modal-content p {
+  margin-bottom: 1.5rem;
+  color: var(--foreground);
+  opacity: 0.9;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background-color: var(--input-background);
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.modal-button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.modal-button:hover {
+  opacity: 0.8;
+}
+
+.modal-button.primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.modal-button.secondary {
+  background-color: var(--border-color);
+  color: var(--foreground);
+}
+
+.modal-button.danger {
+  background-color: var(--red);
+  color: white;
 }
