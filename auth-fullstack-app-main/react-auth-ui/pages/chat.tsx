@@ -23,9 +23,14 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // State for sidebar
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const router = useRouter();
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   const fetchLatestChat = async () => {
     try {
@@ -104,7 +109,16 @@ export default function ChatPage() {
       <ChatSidebar
         currentChatId={currentChat?.id || null}
         onSelectChat={handleSelectChat}
+        isCollapsed={isSidebarCollapsed}
+        // The toggleSidebar prop is removed as the button is now managed here
       />
+      
+      {/* This is the new hover container that shows the button */}
+      <div className={`sidebar-toggle-container ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <button onClick={toggleSidebar} className="toggle-button-visual">
+          {isSidebarCollapsed ? '>' : '<'}
+        </button>
+      </div>
 
       <div className="flex-1 h-full flex flex-col">
         <div className="chat-history flex-grow overflow-y-auto min-h-0 p-4">
