@@ -9,11 +9,12 @@ interface ChatSession {
   title: string;
 }
 
-// Updated props interface: toggleSidebar is no longer needed here
+// Define the props interface for the component
 interface ChatSidebarProps {
   currentChatId: number | null;
   onSelectChat: (chat: { id: number; title: string }) => void | Promise<void>;
   isCollapsed: boolean;
+  toggleSidebar: () => void;
 }
 
 // A simple modal component for rename/delete actions
@@ -30,12 +31,14 @@ const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
 };
 
 
-export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }: ChatSidebarProps) {
+export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed, toggleSidebar }: ChatSidebarProps) {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
   const [modal, setModal] = useState<{ type: 'rename' | 'delete' | null, chat: ChatSession | null }>({ type: null, chat: null });
   const [renameTitle, setRenameTitle] = useState("");
+  // ✅ State to manage which dropdown menu is open
+  const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
 
   const fetchChatSessions = async () => {
     try {
@@ -95,6 +98,7 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
     if (type === 'rename') {
       setRenameTitle(chat.title);
     }
+    setMenuOpenFor(null); // Close the dropdown when a modal opens
   };
 
   const closeModal = () => {
@@ -105,12 +109,23 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
   useEffect(() => {
     fetchChatSessions();
   }, []);
+  
+  // ✅ Function to close dropdown if user clicks elsewhere
+  useEffect(() => {
+    const handleClickOutside = () => setMenuOpenFor(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
     <div className={`chat-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      
+      <button onClick={toggleSidebar} className="sidebar-toggle-button">
+        {isCollapsed ? '>' : '<'}
+      </button>
+
       <div className="chat-sessions-header">
         <h2 className="text-xl font-bold">Chat Sessions</h2>
-        {/* '+' button is now removed from the header */}
       </div>
       <ul className="chat-sessions-list">
         {loading ? <p>Loading...</p> :
@@ -119,14 +134,29 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
               <div className="flex justify-between items-center w-full">
                 <span className="truncate flex-1">{chat.title}</span>
                 <div className="relative">
-                  <button className="menu-button" onClick={(e) => { e.stopPropagation(); openModal('rename', chat); }}>⋮</button>
+                  {/* ✅ Updated menu button logic */}
+                  <button 
+                    className="menu-button" 
+                    onClick={(e) => { 
+                      e.stopPropagation(); // Prevent click from selecting the chat
+                      setMenuOpenFor(menuOpenFor === chat.id ? null : chat.id); 
+                    }}
+                  >
+                    ⋮
+                  </button>
+                  {/* ✅ ADD THE DROPDOWN MENU */}
+                  {menuOpenFor === chat.id && (
+                    <div className="dropdown-menu">
+                      <button onClick={() => openModal('rename', chat)}>Rename</button>
+                      <button onClick={() => openModal('delete', chat)}>Delete</button>
+                    </div>
+                  )}
                 </div>
               </div>
             </li>
           ))}
       </ul>
       
-      {/* Container for bottom buttons */}
       <div className="sidebar-footer">
         <button onClick={createNewChat} className="new-chat-button-bottom">
           + New Chat
@@ -134,7 +164,6 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
         <button onClick={logout} className="logout-button">Logout</button>
       </div>
 
-      {/* Modal JSX for rename/delete */}
       <Modal isOpen={modal.type !== null} onClose={closeModal} title={modal.type === 'rename' ? 'Rename Chat' : 'Delete Chat'}>
         {modal.type === 'rename' && (
           <div>
