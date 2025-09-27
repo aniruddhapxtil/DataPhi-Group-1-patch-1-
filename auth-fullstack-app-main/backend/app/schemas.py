@@ -1,9 +1,6 @@
-# backend/app/schemas.py
-
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-# ✅ Corrected imports for wider compatibility
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 # ----- Auth -----
 class UserCreate(BaseModel):
@@ -24,8 +21,7 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    # ✅ Corrected: Changed 'str | None' to 'Optional[str]'
-    email: Optional[str] = None
+    email: str | None = None
 
 class ChangePasswordRequest(BaseModel):
     email: str
@@ -60,15 +56,17 @@ class ChatSessionOut(BaseModel):
     id: int
     title: str
     created_at: datetime
-    # ✅ Corrected: Changed 'list[MessageOut]' to 'List[MessageOut]'
-    messages: List[MessageOut] = []
+    messages: list[MessageOut] = []
 
     class Config:
         from_attributes = True
 
-# ----- ✅ NEW STREAMING PAYLOAD SCHEMAS -----
-# These models define the structure for the different types of messages
-# we will stream to the frontend.
+# ----- STREAMING PAYLOAD SCHEMAS -----
+
+class TextChunkPayload(BaseModel):
+    """Schema for a single chunk of streaming text."""
+    type: str = "text_chunk"
+    content: str
 
 class TextPayload(BaseModel):
     """Schema for a simple text payload."""
