@@ -9,12 +9,11 @@ interface ChatSession {
   title: string;
 }
 
-// Define the props interface for the component
+// ✅ The toggleSidebar prop is removed from the interface
 interface ChatSidebarProps {
   currentChatId: number | null;
   onSelectChat: (chat: { id: number; title: string }) => void | Promise<void>;
   isCollapsed: boolean;
-  toggleSidebar: () => void;
 }
 
 // A simple modal component for rename/delete actions
@@ -30,22 +29,23 @@ const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
     );
 };
 
-
-export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed, toggleSidebar }: ChatSidebarProps) {
+// ✅ The toggleSidebar prop is removed from the function signature
+export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }: ChatSidebarProps) {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
   const [modal, setModal] = useState<{ type: 'rename' | 'delete' | null, chat: ChatSession | null }>({ type: null, chat: null });
   const [renameTitle, setRenameTitle] = useState("");
-  // ✅ State to manage which dropdown menu is open
   const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchChatSessions = async () => {
     try {
       const res = await api.get('/chats/all');
-      setChatSessions(res.data);
+      setChatSessions(res.data || []);
     } catch (err) {
       console.error('Error fetching chats:', err);
+      setChatSessions([]);
     } finally {
       setLoading(false);
     }
@@ -56,6 +56,7 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed, 
       const newChat = await api.post('/chats/');
       setChatSessions(prev => [newChat.data, ...prev]);
       onSelectChat(newChat.data);
+      setSearchQuery("");
     } catch (err) {
       console.error('Error creating chat:', err);
     }
@@ -98,7 +99,7 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed, 
     if (type === 'rename') {
       setRenameTitle(chat.title);
     }
-    setMenuOpenFor(null); // Close the dropdown when a modal opens
+    setMenuOpenFor(null);
   };
 
   const closeModal = () => {
@@ -110,45 +111,58 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed, 
     fetchChatSessions();
   }, []);
   
-  // ✅ Function to close dropdown if user clicks elsewhere
   useEffect(() => {
     const handleClickOutside = () => setMenuOpenFor(null);
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const filteredSessions = chatSessions.filter(chat =>
+    chat.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className={`chat-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       
-      <button onClick={toggleSidebar} className="sidebar-toggle-button">
-        {isCollapsed ? '>' : '<'}
-      </button>
+      {/* The toggle button is no longer here */}
 
       <div className="chat-sessions-header">
         <h2 className="text-xl font-bold">Chat Sessions</h2>
       </div>
+
+      <div className="search-container">
+        <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search chats..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <ul className="chat-sessions-list">
         {loading ? <p>Loading...</p> :
-          chatSessions.map(chat => (
+          filteredSessions.map(chat => (
             <li key={chat.id} className={`chat-session-item ${chat.id === currentChatId ? 'active' : ''}`} onClick={() => onSelectChat(chat)}>
               <div className="flex justify-between items-center w-full">
                 <span className="truncate flex-1">{chat.title}</span>
                 <div className="relative">
-                  {/* ✅ Updated menu button logic */}
                   <button 
                     className="menu-button" 
                     onClick={(e) => { 
-                      e.stopPropagation(); // Prevent click from selecting the chat
+                      e.stopPropagation();
                       setMenuOpenFor(menuOpenFor === chat.id ? null : chat.id); 
                     }}
                   >
                     ⋮
                   </button>
-                  {/* ✅ ADD THE DROPDOWN MENU */}
                   {menuOpenFor === chat.id && (
                     <div className="dropdown-menu">
-                      <button onClick={() => openModal('rename', chat)}>Rename</button>
-                      <button onClick={() => openModal('delete', chat)}>Delete</button>
+                      <button onClick={(e) => { e.stopPropagation(); openModal('rename', chat); }}>Rename</button>
+                      <button onClick={(e) => { e.stopPropagation(); openModal('delete', chat); }}>Delete</button>
                     </div>
                   )}
                 </div>
