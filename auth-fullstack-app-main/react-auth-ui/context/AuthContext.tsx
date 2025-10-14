@@ -1,24 +1,45 @@
-// ✅ FIXED: context/AuthContext.tsx
-import { createContext, useContext, useEffect, useState } from 'react';
-import api from '../services/api';
-import { useRouter } from 'next/router';
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import api from "../services/api";
+import { useRouter } from "next/router";
 
-const AuthContext = createContext<any>(null);
+export interface User {
+  id: number;
+  email: string;
+  username: string;
+  role: string;
+}
 
-export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<any>(null);
+export interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (username: string, email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  logout: () => void;
+}
+
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      setToken(storedToken);
       api
-        .get('/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
+        .get("/auth/me", {
+          headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((res) => setUser(res.data))
-        .catch(() => setUser(null))
+        .catch(() => {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem("token");
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -28,56 +49,52 @@ export const AuthProvider = ({ children }: any) => {
   const login = async (email: string, password: string) => {
     try {
       const formData = new URLSearchParams();
-      formData.append('username', email);
-      formData.append('password', password);
+      formData.append("username", email);
+      formData.append("password", password);
 
-      const res = await api.post('/auth/login', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      const res = await api.post("/auth/login", formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
-      localStorage.setItem('token', res.data.access_token);
+      localStorage.setItem("token", res.data.access_token);
+      setToken(res.data.access_token);
 
-      const profile = await api.get('/auth/me', {
-        headers: {
-          Authorization: `Bearer ${res.data.access_token}`,
-        },
+      const profile = await api.get("/auth/me", {
+        headers: { Authorization: `Bearer ${res.data.access_token}` },
       });
-
       setUser(profile.data);
-      router.push('/profile');
+      router.push("/profile");
       return { success: true };
-    } catch (error: any) {
-      return { success: false, message: 'Invalid credentials' };
+    } catch (err: any) {
+      return { success: false, message: "Invalid credentials" };
     }
   };
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const res = await api.post('/auth/register', { username, email, password });
+      const res = await api.post("/auth/register", { username, email, password });
       return { success: true, message: res.data.message };
     } catch (err: any) {
-      return {
-        success: false,
-        message: err.response?.data?.detail || 'Registration failed',
-      };
+      return { success: false, message: err.response?.data?.detail || "Registration failed" };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
-    if (!window.location.pathname.includes('/change-password')) {
-      router.push('/login');
-    }
+    setToken(null);
+    router.push("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
+};

@@ -1,4 +1,3 @@
-# ✅ FIXED: app/auth/routes.py
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
@@ -28,7 +27,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="User already exists")
 
     hashed_password = pwd_context.hash(user.password)
-    db_user = models.User(username=user.username, email=user.email, hashed_password=hashed_password)
+    db_user = models.User(username=user.username, email=user.email, hashed_password=hashed_password, role="user")
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -39,9 +38,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
-
+    access_token_expires = timedelta(minutes=60)
+    access_token = create_access_token({"sub": user.email, "role": user.role}, expires_delta=access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer"}
 @router.get("/me", response_model=schemas.UserOut)
 def get_me(current_user: models.User = Depends(get_current_user)):
     if not current_user:
@@ -91,3 +90,4 @@ def change_password(data: schemas.ChangePasswordRequest, db: Session = Depends(g
     user.hashed_password = pwd_context.hash(data.new_password)
     db.commit()
     return {"message": "You have successfully changed your password. Please log in again."}
+

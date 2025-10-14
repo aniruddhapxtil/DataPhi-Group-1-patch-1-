@@ -1,4 +1,3 @@
-# backend/app/models.py
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -12,7 +11,9 @@ class User(Base):
     hashed_password = Column(String)
     reset_token = Column(String, nullable=True)
     reset_token_expires = Column(DateTime(timezone=True), nullable=True)
+    role = Column(String, default="user")  # 👈 Added role for admin/user
     chats = relationship("ChatSession", back_populates="user")
+    token_usages = relationship("TokenUsage", back_populates="user")  # 👈 relationship
 
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
@@ -31,3 +32,18 @@ class Message(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     chat_id = Column(Integer, ForeignKey("chat_sessions.id"))
     chat = relationship("ChatSession", back_populates="messages")
+
+
+# 👇 NEW TokenUsage model
+class TokenUsage(Base):
+    __tablename__ = "token_usage"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    model_name = Column(String, default="gpt-3.5")  # 👈 store model name
+    user_query = Column(Text, nullable=False)        # 👈 store user prompt
+    prompt_tokens = Column(Integer, default=0)
+    response_tokens = Column(Integer, default=0)
+    total_tokens = Column(Integer, default=0)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="token_usages")

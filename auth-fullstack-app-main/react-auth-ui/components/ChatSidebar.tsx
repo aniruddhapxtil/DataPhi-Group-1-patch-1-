@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-
+import Link from 'next/link';
 // Define the ChatSession interface
 interface ChatSession {
   id: number;
@@ -33,7 +33,7 @@ const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
 export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }: ChatSidebarProps) {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [modal, setModal] = useState<{ type: 'rename' | 'delete' | null, chat: ChatSession | null }>({ type: null, chat: null });
   const [renameTitle, setRenameTitle] = useState("");
   const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
@@ -175,6 +175,19 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
         <button onClick={createNewChat} className="new-chat-button-bottom">
           + New Chat
         </button>
+        {user?.role === "admin" && (
+          <Link href="/admin">
+            <button className="new-chat-button-bottom">
+              🧾 Admin Dashboard
+            </button>
+          </Link>
+        )}
+        {/* Show My Token Usage button for all users */}
+        <Link href="/user-usage">
+          <button className="new-chat-button-bottom">
+            📊 My Token Usage
+          </button>
+        </Link>
         <button onClick={logout} className="logout-button">Logout</button>
       </div>
 

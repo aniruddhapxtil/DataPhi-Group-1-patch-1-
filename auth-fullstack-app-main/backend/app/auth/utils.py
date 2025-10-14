@@ -18,12 +18,25 @@ def hash_password(password: str) -> str:
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
-def create_access_token(data: dict) -> str:
+'''def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)'''
+# ✅ UPDATED ACCESS TOKEN (supports custom expiry)
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    """
+    Enhanced create_access_token to allow custom expiry time (e.g., 1 hour for admin).
+    Keeps compatibility with old logic.
+    """
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=30)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 # --- Password Reset Token Configuration ---
 def generate_reset_token() -> str:
     return secrets.token_urlsafe(32)
