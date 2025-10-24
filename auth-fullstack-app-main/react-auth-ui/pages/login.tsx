@@ -11,9 +11,14 @@ export default function Login() {
   const [message, setMessage] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  // Redirect based on role
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/chat');
+      if (user.role === 'admin') {
+        router.replace('/admin');
+      } else {
+        router.replace('/chat');
+      }
     }
   }, [loading, user, router]);
 

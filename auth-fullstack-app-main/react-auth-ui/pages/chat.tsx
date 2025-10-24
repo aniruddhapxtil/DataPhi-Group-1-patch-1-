@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/router";
 import api from "../services/api";
-import { useAuth, AuthProvider } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import ChatSidebar from "@/components/ChatSidebar";
 import ChatMessageChart from "@/components/ChatMessageChart";
 
+// Interfaces for our data structures
 interface Message {
   id: number;
   content: string;
@@ -20,20 +20,16 @@ interface ChatSession {
   messages: Message[];
 }
 
-// ✅ Inner component for chat page logic
-function ChatPageContent() {
+// ✅ The component is now a single, unified function.
+export default function ChatPage() {
+  // ✅ All hooks are called unconditionally at the top level.
+  const { user } = useAuth();
   const [currentChat, setCurrentChat] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const { user } = useAuth();
-  const router = useRouter();
-
-  // Use admin auth only if user.role === "admin"
-  const adminContext = user?.role === "admin" ? useAuth() : null;
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -56,14 +52,21 @@ function ChatPageContent() {
         setMessages([]);
       }
     } catch {
-      const newChatRes = await api.post("/chats/");
-      setCurrentChat(newChatRes.data);
-      setMessages([]);
+      try {
+        const newChatRes = await api.post("/chats/");
+        setCurrentChat(newChatRes.data);
+        setMessages([]);
+      } catch (postErr) {
+        console.error("Failed to create a new chat:", postErr);
+      }
     }
   };
 
   useEffect(() => {
-    if (user) fetchLatestChat();
+    // The logic is now inside the hook, not outside.
+    if (user) {
+      fetchLatestChat();
+    }
   }, [user]);
 
   const handleSelectChat = async (chat: { id: number; title: string }) => {
@@ -139,8 +142,17 @@ function ChatPageContent() {
     }
   };
 
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
+  // This is a "guard clause". It's a safe way to handle the loading state
+  // without breaking the Rules of Hooks.
+  if (!user) {
+    return <p className="p-6 text-center text-gray-400">Loading session...</p>;
+  }
+
+  // The main return statement is now unconditional.
   return (
     <div className="chat-page-container">
       <ChatSidebar
@@ -189,21 +201,4 @@ function ChatPageContent() {
       </div>
     </div>
   );
-}
-
-// ✅ Main exported ChatPage wrapper
-export default function ChatPage() {
-  const { user } = useAuth();
-
-  // If admin, wrap content with AdminAuthProvider
-  if (user?.role === "admin") {
-    return (
-      <AuthProvider>
-        <ChatPageContent />
-      </AuthProvider>
-    );
-  }
-
-  // Normal users
-  return <ChatPageContent />;
 }

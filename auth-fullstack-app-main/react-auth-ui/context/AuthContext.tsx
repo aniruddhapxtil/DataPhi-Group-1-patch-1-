@@ -31,10 +31,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (storedToken) {
       setToken(storedToken);
       api
-        .get("/auth/me", {
-          headers: { Authorization: `Bearer ${storedToken}` },
+        .get("/auth/me", { headers: { Authorization: `Bearer ${storedToken}` } })
+        .then((res) => {
+          setUser(res.data);
+          // Role-based redirect
+          if (res.data.role === "admin") {
+            router.replace("/admin");
+          } else {
+            router.replace("/chat");
+          }
         })
-        .then((res) => setUser(res.data))
         .catch(() => {
           setUser(null);
           setToken(null);
@@ -63,7 +69,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers: { Authorization: `Bearer ${res.data.access_token}` },
       });
       setUser(profile.data);
-      router.push("/profile");
+
+      // Role-based redirect
+      if (profile.data.role === "admin") {
+        router.replace("/admin");
+      } else {
+        router.replace("/chat");
+      }
+
       return { success: true };
     } catch (err: any) {
       return { success: false, message: "Invalid credentials" };

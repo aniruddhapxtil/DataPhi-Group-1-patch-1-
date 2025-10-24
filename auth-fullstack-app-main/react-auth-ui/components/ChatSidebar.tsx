@@ -1,35 +1,33 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
-// Define the ChatSession interface
+import '../styles/adminpage.css'
+
 interface ChatSession {
   id: number;
   title: string;
 }
 
-// ✅ The toggleSidebar prop is removed from the interface
 interface ChatSidebarProps {
   currentChatId: number | null;
   onSelectChat: (chat: { id: number; title: string }) => void | Promise<void>;
   isCollapsed: boolean;
 }
 
-// A simple modal component for rename/delete actions
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <h2 className="modal-title">{title}</h2>
-                {children}
-            </div>
-        </div>
-    );
+  if (!isOpen) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <h2 className="modal-title">{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
 };
 
-// ✅ The toggleSidebar prop is removed from the function signature
 export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }: ChatSidebarProps) {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +36,9 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
   const [renameTitle, setRenameTitle] = useState("");
   const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const avatarButtonRef = useRef<HTMLButtonElement>(null);
 
   const fetchChatSessions = async () => {
     try {
@@ -96,9 +97,7 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
 
   const openModal = (type: 'rename' | 'delete', chat: ChatSession) => {
     setModal({ type, chat });
-    if (type === 'rename') {
-      setRenameTitle(chat.title);
-    }
+    if (type === 'rename') setRenameTitle(chat.title);
     setMenuOpenFor(null);
   };
 
@@ -107,12 +106,22 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
     setRenameTitle("");
   };
 
+  const getAvatarInitial = () => {
+    if (!user?.username) return "";
+    return user.username.charAt(0).toUpperCase();
+  };
+
   useEffect(() => {
     fetchChatSessions();
   }, []);
-  
+
   useEffect(() => {
-    const handleClickOutside = () => setMenuOpenFor(null);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+        setMenuOpenFor(null);
+      }
+    };
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
@@ -123,38 +132,36 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
 
   return (
     <div className={`chat-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      
-      {/* The toggle button is no longer here */}
 
       <div className="chat-sessions-header">
         <h2 className="text-xl font-bold">Chat Sessions</h2>
       </div>
 
-      <div className="search-container">
+      <div className="search-container mt-3">
         <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
           type="text"
-          className="search-input"
+          className="search-input w-full"
           placeholder="Search chats..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
-      <ul className="chat-sessions-list">
-        {loading ? <p>Loading...</p> :
+      <ul className="chat-sessions-list mt-2">
+        {loading ? <p className="text-gray-400">Loading...</p> :
           filteredSessions.map(chat => (
             <li key={chat.id} className={`chat-session-item ${chat.id === currentChatId ? 'active' : ''}`} onClick={() => onSelectChat(chat)}>
               <div className="flex justify-between items-center w-full">
                 <span className="truncate flex-1">{chat.title}</span>
                 <div className="relative">
-                  <button 
-                    className="menu-button" 
-                    onClick={(e) => { 
+                  <button
+                    className="menu-button"
+                    onClick={(e) => {
                       e.stopPropagation();
-                      setMenuOpenFor(menuOpenFor === chat.id ? null : chat.id); 
+                      setMenuOpenFor(menuOpenFor === chat.id ? null : chat.id);
                     }}
                   >
                     ⋮
@@ -170,27 +177,65 @@ export default function ChatSidebar({ currentChatId, onSelectChat, isCollapsed }
             </li>
           ))}
       </ul>
-      
-      <div className="sidebar-footer">
-        <button onClick={createNewChat} className="new-chat-button-bottom">
+
+      {/* Sidebar Footer */}
+      <div className="sidebar-footer mt-3 px-2">
+        <button onClick={createNewChat} className="new-chat-button-bottom w-full mb-3 hover:bg-gray-700 transition-colors">
           + New Chat
         </button>
-        {user?.role === "admin" && (
-          <Link href="/admin">
-            <button className="new-chat-button-bottom">
-              🧾 Admin Dashboard
-            </button>
-          </Link>
-        )}
-        {/* Show My Token Usage button for all users */}
-        <Link href="/user-usage">
-          <button className="new-chat-button-bottom">
-            📊 My Token Usage
+
+        {/* Avatar + Username Dropdown */}
+        <div className="relative w-full" ref={dropdownRef}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setDropdownOpen(!dropdownOpen); }}
+            ref={avatarButtonRef}
+            className="new-chat-button-bottom flex items-center gap-2 w-full py-3 px-2 hover:bg-gray-700 transition-colors"
+          >
+            <div className="chat-sidebar-avatar flex-shrink-0">
+              {getAvatarInitial()}
+            </div>
+            <span className="truncate font-bold text-center flex-1">{user?.username}</span>
           </button>
-        </Link>
-        <button onClick={logout} className="logout-button">Logout</button>
+
+          {dropdownOpen && (
+            <div
+              className="dropdown-menu absolute left-0 bottom-full mb-2 bg-gray-800 text-white rounded shadow z-50"
+              style={{ width: avatarButtonRef.current?.offsetWidth }}
+            >
+              <div className="w-full text-center px-4 py-2 hover:bg-gray-700 transition-colors text-sm">
+                {user?.email}
+              </div>
+              <hr className="border-gray-700" />
+
+              <Link href="/profile">
+                <button className="w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors text-base font-semibold">
+                  👤 Profile
+                </button>
+              </Link>
+
+              <Link href="/user-usage">
+                <button className="w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors text-base font-semibold">
+                  📊 My Token Usage
+                </button>
+              </Link>
+
+              {user?.role === "admin" && (
+                <Link href="/admin">
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors text-base font-semibold">
+                    🧾 Admin Dashboard
+                  </button>
+                </Link>
+              )}
+
+              <button onClick={logout} className="w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors text-base font-semibold">
+                🚪 Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Chat Modals */}
       <Modal isOpen={modal.type !== null} onClose={closeModal} title={modal.type === 'rename' ? 'Rename Chat' : 'Delete Chat'}>
         {modal.type === 'rename' && (
           <div>

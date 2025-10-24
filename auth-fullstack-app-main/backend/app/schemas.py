@@ -78,3 +78,20 @@ class ChartPayload(BaseModel):
     type: str = "chart"
     chart_type: str = "bar"
     data: Dict[str, Any] = Field(..., example={"title": "Quarterly Sales", "labels": ["Q1", "Q2", "Q3"], "values": [100, 150, 120]})
+
+# ----- ✅ NEW SCHEMA for Token Usage API Response -----
+class TokenUsageOut(BaseModel):
+    """
+    Defines the data structure for a single token usage record
+    that will be sent to the frontend.
+    """
+    chat_id: int
+    chat_title: str
+    prompt_tokens: int
+    response_tokens: int
+    total_tokens: int
+    created_at: datetime
+    cost: float  # The new field for billing
+
+    class Config:
+        from_attributes = True # Pydantic v1 uses orm_mode = True
